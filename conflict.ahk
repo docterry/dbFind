@@ -20,11 +20,13 @@ if instr(myDir,"Dropbox\") {
 searchStr := "conflicted copy"
 regExStr := "\s\(.*" searchStr ".*\)"
 filect := 0
+estMax := 6000
 
 Loop, %dbPath%* , , 1
 {
 	full := A_LoopFileLongPath
-	Progress, % 100*(A_Index/6000), % A_LoopFileName, % A_Index, % filect " conflicted"
+	ind := A_Index
+	Progress, % 100*(ind/estMax), , % ind, % filect " conflicted"
 	if instr(full,searchStr) {
 		Progress, Hide
 		fullNon := RegExReplace(full,regExStr)
@@ -57,7 +59,7 @@ Loop, %dbPath%* , , 1
 	}
 }
 Progress, off
-MsgBox,,% filect " files deleted", % filelog
+MsgBox,,% filect " files deleted", % A_index " total files.`n" filelog
 
 ExitApp
 
