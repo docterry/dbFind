@@ -19,18 +19,21 @@ if instr(myDir,"Dropbox\") {
 }
 searchStr := "conflicted copy"
 regExStr := "\s\(.*" searchStr ".*\)"
+Gui, +OwnDialogs
+OnMessage(0x10, "exitout")
 filect := 0
 estMax := 6000
 
+Progress, M2 T, , 0, 0
 Loop, %dbPath%* , , 1
 {
 	full := A_LoopFileLongPath
 	ind := A_Index
-	Progress, % 100*(ind/estMax), , % ind, % filect " conflicted"
+	Progress, % 100*(ind/estMax) , , % ind, % filect " conflicted"
 	if instr(full,searchStr) {
-		Progress, Hide
 		fullNon := RegExReplace(full,regExStr)
 		if !FileExist(fullNon) {
+			Progress, Hide
 			MsgBox, 4, Missing file
 					, % full "`n`n"
 					. "Found ""conflicted copy"" without`n"
@@ -59,9 +62,17 @@ Loop, %dbPath%* , , 1
 	}
 }
 Progress, off
-MsgBox,,% filect " files deleted", % A_index " total files.`n" filelog
+MsgBox,,% filect " files deleted", % ind " total files.`n" filelog
 
 ExitApp
+
+exitout() 
+{
+	global
+	Progress, off
+	MsgBox,,Aborted!, % filect " files deleted.`n" ind " total files.`n" filelog
+	ExitApp
+}
 
 /* StrX parameters
 StrX( H, BS,BO,BT, ES,EO,ET, NextOffset )
