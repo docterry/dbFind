@@ -6,7 +6,6 @@
 #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%
-FileInstall, WinMergeU.exe, WinMergeU.exe
 
 myDir := A_ScriptDir
 if instr(myDir,"Dropbox\") {
@@ -20,13 +19,14 @@ if instr(myDir,"Dropbox\") {
 }
 searchStr := "conflicted copy"
 regExStr := "\s\(.*" searchStr ".*\)"
-Gui, +OwnDialogs
-OnMessage(0x53, "winMerge")
+filect := 0
+estMax := 6000
 
 Loop, %dbPath%* , , 1
 {
 	full := A_LoopFileLongPath
-	Progress, % 100*(A_Index/6000), % A_LoopFileName, % A_Index, % filect " deleted"
+	ind := A_Index
+	Progress, % 100*(ind/estMax), , % ind, % filect " conflicted"
 	if instr(full,searchStr) {
 		Progress, Hide
 		fullNon := RegExReplace(full,regExStr)
@@ -41,41 +41,27 @@ Loop, %dbPath%* , , 1
 				FileMove, %full%, %fullNon%
 			}
 			continue
+			Progress, show
 		}
 		FileGetTime, dateNm, %full%
 		FileGetTime, dateNon, %fullNon%
 		dateDiff := dateNm
 		dateDiff -= dateNon, Seconds
-		if (dateDiff>0) {										; Conflicted copy is at least 1 sec older
-			MsgBox, 16388, Conflicted newer
-					, % fullNon "`n`n"
-					. "Existing: " dateNon "`n"
-					. "Conflicted: " dateNm "`n`n"
-					. "Delete older and rename conflicted?"
-			IfMsgBox Yes
-			{
-				FileMove, %full%, %fullNon%, 1
-				filelog .= full "`n"
-				filect += 1
-			}
+		if (dateDiff>0) {										; Conflicted copy is at least 1 sec newer
+			FileMove, %full%, %fullNon%, 1
+			filelog .= full " newer.`n"
+			filect += 1
 		} else {												; Conflicted copy is older,
 			FileDelete %full%									; Delete it.
-			filelog .= full "`n"
+			filelog .= full " older.`n"
 			filect += 1
 		}
 	}
 }
-Progress, Hide
-MsgBox,,% filect " files deleted", % filelog
+Progress, off
+MsgBox,,% filect " files deleted", % A_index " total files.`n" filelog
 
 ExitApp
-
-winMerge() 
-{
-	global
-	Run, WinMergeU.exe "%fullNon%" "%full%" 
-	return
-}
 
 /* StrX parameters
 StrX( H, BS,BO,BT, ES,EO,ET, NextOffset )
